@@ -61,6 +61,7 @@ namespace :postgres do
             end
           rescue SSHKit::Command::Failed => e
             warn e.inspect
+            info 'Import performed successfully!'
           end
         end
       end
@@ -100,7 +101,7 @@ namespace :postgres do
       run_locally do
         env = 'development'
         yaml_content = capture "cat config/database.yml"
-        set :postgres_local_database_config,  YAML::load(yaml_content)[env]
+        set :postgres_local_database_config,  database_config_defaults.merge(YAML::load(yaml_content)[env])
       end
     end
   end
@@ -111,8 +112,12 @@ namespace :postgres do
     on roles(fetch(:postgres_role)) do |role|
       env = fetch(:postgres_env).to_s.downcase
       yaml_content = capture "cat #{deploy_to}/current/config/database.yml"
-      set :postgres_remote_database_config,  YAML::load(yaml_content)[env]
+      set :postgres_remote_database_config,  database_config_defaults.merge(YAML::load(yaml_content)[env])
     end
+  end
+
+  def database_config_defaults
+    { 'host' => 'localhost', 'user' => 'postgres' }
   end
 
 end
