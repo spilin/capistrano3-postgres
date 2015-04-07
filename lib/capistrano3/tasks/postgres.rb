@@ -24,9 +24,7 @@ namespace :postgres do
           set :postgres_remote_sqlc_file_path, "#{shared_path}/#{fetch(:postgres_backup_dir)}/#{file_name}"
         end
 
-        execute :pg_dump, "-U #{config['user'] || config['username']} -h #{config['host']} -Fc --file=#{fetch(:postgres_remote_sqlc_file_path)} #{config['database']}" do |ch, stream, out|
-          ch.send_data "#{config['password']}\n" if out =~ /^Password:/
-        end
+        execute "PGPASSWORD=#{config['password']} pg_dump -U #{config['user'] || config['username']} -h #{config['host']} -Fc --file=#{fetch(:postgres_remote_sqlc_file_path)} #{config['database']}"
       end
     end
 
@@ -56,9 +54,7 @@ namespace :postgres do
           file_name = capture("ls -v tmp/#{fetch :postgres_backup_dir}").split(/\n/).last
           file_path = "tmp/#{fetch :postgres_backup_dir}/#{file_name}"
           begin
-            execute :pg_restore, "-c -U #{config['user'] || config['username']} -W --no-owner -h #{config['host']} -d #{fetch(:database_name)} #{file_path}" do |ch, stream, out|
-              ch.send_data "#{config['password']}\n" if out =~ /^Password:/
-            end
+            execute "PGPASSWORD=#{config['password']} pg_restore -c -U #{config['user'] || config['username']} -W --no-owner -h #{config['host']} -d #{fetch(:database_name)} #{file_path}"
           rescue SSHKit::Command::Failed => e
             warn e.inspect
             info 'Import performed successfully!'
