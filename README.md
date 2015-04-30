@@ -4,11 +4,11 @@
 
 Add this line to your application's Gemfile:
 
-    gem 'capistrano3-postgres'
+    gem 'capistrano3-postgres', require: false
 
 or:
 
-    gem 'capistrano3-postgres' , group: :development
+    gem 'capistrano3-postgres', require: false, group: :development
 
 And then execute:
 
