@@ -1,7 +1,7 @@
 namespace :load do
   task :defaults do
     set :postgres_backup_dir, -> { 'postgres_backup' }
-    set :postgres_role, :app
+    set :postgres_role, :db
     set :postgres_env, -> { fetch(:rack_env, fetch(:rails_env, fetch(:stage))) }
     set :postgres_remote_sqlc_file_path, -> { nil }
     set :postgres_local_database_config, -> { nil }
@@ -15,8 +15,8 @@ namespace :postgres do
 
     desc 'Create database dump'
     task :create do
-      grab_remote_database_config
       on roles(fetch(:postgres_role)) do |role|
+        grab_remote_database_config
         config = fetch(:postgres_remote_database_config)
 
         unless fetch(:postgres_remote_sqlc_file_path)
@@ -54,10 +54,14 @@ namespace :postgres do
           file_name = capture("ls -v tmp/#{fetch :postgres_backup_dir}").split(/\n/).last
           file_path = "tmp/#{fetch :postgres_backup_dir}/#{file_name}"
           begin
-            execute "PGPASSWORD=#{config['password']} pg_restore -c -U #{config['user'] || config['username']} -W --no-owner -h #{config['host']} -d #{fetch(:database_name)} #{file_path}"
+            pgpass_path = File.join(Dir.pwd, '.pgpass')
+            File.open(pgpass_path, 'w+', 0600) { |file| file.write("*:*:*:#{config['user'] || config['username']}:#{config['password']}") }
+            execute "PGPASSFILE=#{pgpass_path} pg_restore -c -U #{config['user'] || config['username']} --no-owner -h #{config['host']} -d #{fetch(:database_name)} #{file_path}"
           rescue SSHKit::Command::Failed => e
             warn e.inspect
             info 'Import performed successfully!'
+          ensure
+            File.delete(pgpass_path) if File.exist?(pgpass_path)
           end
         end
       end
