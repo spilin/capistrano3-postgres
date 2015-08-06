@@ -56,7 +56,7 @@ namespace :postgres do
           begin
             pgpass_path = File.join(Dir.pwd, '.pgpass')
             File.open(pgpass_path, 'w+', 0600) { |file| file.write("*:*:*:#{config['user'] || config['username']}:#{config['password']}") }
-            execute "PGPASSFILE=#{pgpass_path} pg_restore -c -U #{config['user'] || config['username']} --no-owner -h #{config['host']} -d #{fetch(:database_name)} #{file_path}"
+            execute "PGPASSFILE=#{pgpass_path} pg_restore -c -U #{config['user'] || config['username']} --no-owner -h #{config['host']} -p #{config['port'] || 5432 } -d #{fetch(:database_name)} #{file_path}"
           rescue SSHKit::Command::Failed => e
             warn e.inspect
             info 'Import performed successfully!'
