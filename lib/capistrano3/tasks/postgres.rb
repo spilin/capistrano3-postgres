@@ -111,7 +111,7 @@ namespace :postgres do
     return if fetch(:postgres_remote_database_config)
     on roles(fetch(:postgres_role)) do |role|
       env = fetch(:postgres_env).to_s.downcase
-      yaml_content = File.opent("#{deploy_to}/current/config/database.yml").read
+      yaml_content = File.open("#{deploy_to}/current/config/database.yml").read
       set :postgres_remote_database_config,  database_config_defaults.merge(YAML::load(yaml_content)[env])
     end
   end
