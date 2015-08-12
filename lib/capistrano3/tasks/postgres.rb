@@ -37,6 +37,13 @@ namespace :postgres do
         end
 
         download!(fetch(:postgres_remote_sqlc_file_path), "tmp/#{fetch :postgres_backup_dir}/#{Pathname.new(fetch(:postgres_remote_sqlc_file_path)).basename}")
+        begin
+          remote_file = fetch(:postgres_remote_sqlc_file_path)
+        rescue SSHKit::Command::Failed => e
+          warn e.inspect
+        ensure
+          execute "rm #{remote_file}"
+        end
       end
     end
 
