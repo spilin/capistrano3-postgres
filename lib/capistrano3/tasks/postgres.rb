@@ -62,6 +62,7 @@ namespace :postgres do
             info 'Import performed successfully!'
           ensure
             File.delete(pgpass_path) if File.exist?(pgpass_path)
+            File.delete(file_path) if File.exist?(file_path)
           end
         end
       end
