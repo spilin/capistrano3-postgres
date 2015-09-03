@@ -3,6 +3,7 @@ namespace :load do
     set :postgres_backup_dir, -> { 'postgres_backup' }
     set :postgres_role, :db
     set :postgres_env, -> { fetch(:rack_env, fetch(:rails_env, fetch(:stage))) }
+    set :postgres_keep_local_dumps, 0
     set :postgres_remote_sqlc_file_path, -> { nil }
     set :postgres_local_database_config, -> { nil }
     set :postgres_remote_database_config, -> { nil }
@@ -69,7 +70,7 @@ namespace :postgres do
             info 'Import performed successfully!'
           ensure
             File.delete(pgpass_path) if File.exist?(pgpass_path)
-            File.delete(file_path) if File.exist?(file_path)
+            File.delete(file_path) if (fetch(:postgres_keep_local_dumps) == 0) && File.exist?(file_path)
           end
         end
       end
@@ -90,6 +91,15 @@ namespace :postgres do
         end
       end
     end
+
+    desc "Cleanup old local dumps"
+    task :cleanup do
+      run_locally do
+        dir = "tmp/#{fetch :postgres_backup_dir}"
+        file_names = capture("ls -v #{dir}").split(/\n/).sort
+        file_names[0...-fetch(:postgres_keep_local_dumps)].each {|file_name| File.delete("#{dir}/#{file_name}") }
+      end
+    end
   end
 
   desc 'Replecate database locally'
@@ -100,6 +110,7 @@ namespace :postgres do
     invoke "postgres:backup:create"
     invoke "postgres:backup:download"
     invoke "postgres:backup:import"
+    invoke("postgres:backup:cleanup") if fetch(:postgres_keep_local_dumps) > 0
   end
 
   # Grabs local database config before importing dump

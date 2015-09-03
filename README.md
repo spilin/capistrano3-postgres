@@ -43,6 +43,10 @@ Sometimes it's a good idea to create dump before each deploy.
 before 'deploy:starting', 'postgres:backup:create'
 ```
 
+All downloaded dump files will be deleted after importing. If you want to keep them, you can set:
+```
+set :postgres_keep_local_dumps, 5 # Will keep 5 last dump files.
+```
 
 ## Contributing
 
@@ -51,9 +55,3 @@ before 'deploy:starting', 'postgres:backup:create'
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
 5. Create new Pull Request
-
-
-
-
-
-
