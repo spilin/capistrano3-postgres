@@ -102,7 +102,7 @@ namespace :postgres do
     end
   end
 
-  desc 'Replecate database locally'
+  desc 'Replicate database locally'
   task :replicate do
     grab_local_database_config
     config = fetch(:postgres_local_database_config)
