@@ -25,7 +25,7 @@ namespace :postgres do
           set :postgres_remote_sqlc_file_path, "#{shared_path}/#{fetch(:postgres_backup_dir)}/#{file_name}"
         end
 
-        execute "PGPASSWORD=#{config['password']} pg_dump -U #{config['username'] || config['user']} -h #{config['host']} -Fc --file=#{fetch(:postgres_remote_sqlc_file_path)} #{config['database']}"
+        execute "PGPASSWORD=#{config['password']} pg_dump #{user_option(config)} -h #{config['host']} -Fc --file=#{fetch(:postgres_remote_sqlc_file_path)} #{config['database']}"
       end
     end
 
@@ -64,7 +64,7 @@ namespace :postgres do
           begin
             pgpass_path = File.join(Dir.pwd, '.pgpass')
             File.open(pgpass_path, 'w+', 0600) { |file| file.write("*:*:*:#{config['username'] || config['user']}:#{config['password']}") }
-            execute "PGPASSFILE=#{pgpass_path} pg_restore -c -U #{config['username'] || config['user']} --no-owner -h #{config['host']} -p #{config['port'] || 5432 } -d #{fetch(:database_name)} #{file_path}"
+            execute "PGPASSFILE=#{pgpass_path} pg_restore -c #{user_option(config)} --no-owner -h #{config['host']} -p #{config['port'] || 5432 } -d #{fetch(:database_name)} #{file_path}"
           rescue SSHKit::Command::Failed => e
             warn e.inspect
             info 'Import performed successfully!'
@@ -113,6 +113,14 @@ namespace :postgres do
     invoke("postgres:backup:cleanup") if fetch(:postgres_keep_local_dumps) > 0
   end
 
+  def user_option(config)
+    if config['user'] || config['username']
+      "-U #{config['user'] || config['username']}"
+    else
+      '' # assume ident auth is being used
+    end
+  end
+
   # Grabs local database config before importing dump
   def grab_local_database_config
     return if fetch(:postgres_local_database_config)
@@ -137,7 +145,7 @@ namespace :postgres do
   end
 
   def database_config_defaults
-    { 'host' => 'localhost', 'user' => 'postgres' }
+    { 'host' => 'localhost' }
   end
 
 end
