@@ -119,7 +119,7 @@ namespace :postgres do
     on roles(fetch(:postgres_role)) do |role|
       run_locally do
         env = 'development'
-        yaml_content = capture "cat config/database.yml"
+        yaml_content = ERB.new(capture "cat config/database.yml").result
         set :postgres_local_database_config,  database_config_defaults.merge(YAML::load(yaml_content)[env])
       end
     end
@@ -130,7 +130,8 @@ namespace :postgres do
     return if fetch(:postgres_remote_database_config)
     on roles(fetch(:postgres_role)) do |role|
       env = fetch(:postgres_env).to_s.downcase
-      yaml_content = capture "cat #{deploy_to}/current/config/database.yml"
+      filename = "#{deploy_to}/current/config/database.yml"
+      yaml_content = capture "ruby -e \"require 'erb'; puts ERB.new(File.read('#{filename}')).result\""
       set :postgres_remote_database_config,  database_config_defaults.merge(YAML::load(yaml_content)[env])
     end
   end
