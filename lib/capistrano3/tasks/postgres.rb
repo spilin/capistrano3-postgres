@@ -137,10 +137,13 @@ namespace :postgres do
   def grab_remote_database_config
     return if fetch(:postgres_remote_database_config)
     on roles(fetch(:postgres_role)) do |role|
-      env = fetch(:postgres_env).to_s.downcase
-      filename = "#{deploy_to}/current/config/database.yml"
-      yaml_content = capture "ruby -e \"require 'erb'; puts ERB.new(File.read('#{filename}')).result\""
-      set :postgres_remote_database_config,  database_config_defaults.merge(YAML::load(yaml_content)[env])
+      within release_path do
+        env = fetch(:postgres_env).to_s.downcase
+        filename = "#{deploy_to}/current/config/database.yml"
+        capture_config_cmd = "ruby -e \"require 'erb'; puts ERB.new(File.read('#{filename}')).result\""
+        yaml_content = test('ruby -v') ? capture(capture_config_cmd) : capture(:bundle, :exec, capture_config_cmd)
+        set :postgres_remote_database_config,  database_config_defaults.merge(YAML::load(yaml_content)[env])
+      end
     end
   end
 
