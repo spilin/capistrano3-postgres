@@ -4,6 +4,7 @@ namespace :load do
     set :postgres_role, :db
     set :postgres_env, -> { fetch(:rack_env, fetch(:rails_env, fetch(:stage))) }
     set :postgres_keep_local_dumps, 0
+    set :postgres_backup_compression_level, 0
     set :postgres_remote_sqlc_file_path, -> { nil }
     set :postgres_local_database_config, -> { nil }
     set :postgres_remote_database_config, -> { nil }
@@ -25,7 +26,7 @@ namespace :postgres do
           set :postgres_remote_sqlc_file_path, "#{shared_path}/#{fetch(:postgres_backup_dir)}/#{file_name}"
         end
 
-        execute "PGPASSWORD=#{config['password']} pg_dump #{user_option(config)} -h #{config['host']} -Fc --file=#{fetch(:postgres_remote_sqlc_file_path)} #{config['database']}"
+        execute "PGPASSWORD=#{config['password']} pg_dump #{user_option(config)} -h #{config['host']} -Fc --file=#{fetch(:postgres_remote_sqlc_file_path)} -Z #{fetch(:postgres_backup_compression_level)} #{config['database']}"
       end
     end
 

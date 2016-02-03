@@ -48,6 +48,11 @@ All downloaded dump files will be deleted after importing. If you want to keep t
 set :postgres_keep_local_dumps, 5 # Will keep 5 last dump files.
 ```
 
+To save on disk space, you can set the compression level. Gzip 0-9 are supported, default is 0:
+```
+set :postgres_backup_compression_level, 6 # Will use gzip level 6 to compress the output.
+```
+
 ## Contributing
 
 1. Fork it ( http://github.com/spilin/capistrano3-postgres/fork )
