@@ -12,9 +12,7 @@ namespace :load do
 end
 
 namespace :postgres do
-
   namespace :backup do
-
     desc 'Create database dump'
     task :create do
       on roles(fetch(:postgres_role)) do |role|
@@ -128,7 +126,8 @@ namespace :postgres do
     on roles(fetch(:postgres_role)) do |role|
       run_locally do
         env = 'development'
-        yaml_content = ERB.new(capture "cat config/database.yml").result
+        preload_env_variables(env)
+        yaml_content = ERB.new(capture 'cat config/database.yml').result
         set :postgres_local_database_config,  database_config_defaults.merge(YAML::load(yaml_content)[env])
       end
     end
@@ -141,7 +140,13 @@ namespace :postgres do
       within release_path do
         env = fetch(:postgres_env).to_s.downcase
         filename = "#{deploy_to}/current/config/database.yml"
-        capture_config_cmd = "ruby -e \"require 'erb'; puts ERB.new(File.read('#{filename}')).result\""
+        eval_yaml_with_erb = <<-RUBY.strip
+          #{env_variables_loader_code}
+          require 'erb'
+          puts ERB.new(File.read('#{filename}')).result
+        RUBY
+
+        capture_config_cmd = "ruby -e \"#{eval_yaml_with_erb}\""
         yaml_content = test('ruby -v') ? capture(capture_config_cmd) : capture(:bundle, :exec, capture_config_cmd)
         set :postgres_remote_database_config,  database_config_defaults.merge(YAML::load(yaml_content)[env])
       end
@@ -152,4 +157,46 @@ namespace :postgres do
     { 'host' => 'localhost' }
   end
 
+  # Load environment variables for configurations.
+  # Useful for such gems as Dotenv, Figaro, etc.
+  def preload_env_variables(env)
+    safely_require_gems('dotenv')
+
+    if defined?(Dotenv)
+      load_env_variables_with_dotenv(env)
+    end
+  end
+
+  def load_env_variables_with_dotenv(env)
+    Dotenv.load(
+      File.expand_path('.env.local'),
+      File.expand_path(".env.#{env}"),
+      File.expand_path('.env')
+    )
+  end
+
+  def safely_require_gems(*gem_names)
+    gem_names.each do |name|
+      begin
+        require name
+      rescue LoadError
+        # Ignore if gem doesn't exist
+      end
+    end
+  end
+
+  # Requires necessary gems (Dotenv, Figaro, ...) if present
+  # and loads environment variables for configurations
+  def env_variables_loader_code
+    <<-RUBY.strip
+      begin
+        require 'dotenv'
+        Dotenv.load(
+          File.expand_path('.env.production'),
+          File.expand_path('.env')
+        )
+      rescue LoadError
+      end
+    RUBY
+  end
 end
