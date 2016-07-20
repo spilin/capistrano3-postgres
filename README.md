@@ -20,7 +20,7 @@ Or install it yourself as:
 
 ## Usage
 
-Capistrano3::Postgres supports [Dotenv](https://github.com/bkeepers/dotenv) gem and automatically loads environment variables from `.env` files if they are used in the project.
+Capistrano3::Postgres supports [Dotenv](https://github.com/bkeepers/dotenv) and [Figaro](https://github.com/laserlemon/figaro) gems and automatically loads environment variables from `.env`/`application.yml` files if they are used in the project.
 
 ```ruby
     # Capfile
