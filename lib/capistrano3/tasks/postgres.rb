@@ -141,7 +141,7 @@ namespace :postgres do
         env = fetch(:postgres_env).to_s.downcase
         filename = "#{deploy_to}/current/config/database.yml"
         eval_yaml_with_erb = <<-RUBY.strip
-          #{env_variables_loader_code}
+          #{env_variables_loader_code(env)}
           require 'erb'
           puts ERB.new(File.read('#{filename}')).result
         RUBY
@@ -160,10 +160,12 @@ namespace :postgres do
   # Load environment variables for configurations.
   # Useful for such gems as Dotenv, Figaro, etc.
   def preload_env_variables(env)
-    safely_require_gems('dotenv')
+    safely_require_gems('dotenv', 'figaro')
 
     if defined?(Dotenv)
       load_env_variables_with_dotenv(env)
+    elsif defined?(Figaro)
+      load_env_variables_with_figaro(env)
     end
   end
 
@@ -173,6 +175,13 @@ namespace :postgres do
       File.expand_path(".env.#{env}"),
       File.expand_path('.env')
     )
+  end
+
+  def load_env_variables_with_figaro(env)
+    config = 'config/application.yml'
+
+    Figaro.application = Figaro::Application.new(environment: env, path: config)
+    Figaro.load
   end
 
   def safely_require_gems(*gem_names)
@@ -187,14 +196,23 @@ namespace :postgres do
 
   # Requires necessary gems (Dotenv, Figaro, ...) if present
   # and loads environment variables for configurations
-  def env_variables_loader_code
+  def env_variables_loader_code(env)
     <<-RUBY.strip
       begin
         require 'dotenv'
         Dotenv.load(
-          File.expand_path('.env.production'),
+          File.expand_path(".env.#{env}"),
           File.expand_path('.env')
         )
+      rescue LoadError
+      end
+
+      begin
+        require 'figaro'
+        config = File.expand_path('../config/application.yml', __FILE__)
+
+        Figaro.application = Figaro::Application.new(environment: env, path: config)
+        Figaro.load
       rescue LoadError
       end
     RUBY
