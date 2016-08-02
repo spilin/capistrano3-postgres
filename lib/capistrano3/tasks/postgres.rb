@@ -200,10 +200,7 @@ namespace :postgres do
     <<-RUBY.strip
       begin
         require 'dotenv'
-        Dotenv.load(
-          File.expand_path(".env.#{env}"),
-          File.expand_path('.env')
-        )
+        Dotenv.load(File.expand_path(".env.#{env}"), File.expand_path('.env'))
       rescue LoadError
       end
 
