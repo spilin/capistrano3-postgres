@@ -208,7 +208,7 @@ namespace :postgres do
         require 'figaro'
         config = File.expand_path('../config/application.yml', __FILE__)
 
-        Figaro.application = Figaro::Application.new(environment: env, path: config)
+        Figaro.application = Figaro::Application.new(environment: '#{env}', path: config)
         Figaro.load
       rescue LoadError
       end
