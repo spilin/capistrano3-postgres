@@ -56,6 +56,11 @@ To save on disk space, you can set the compression level. Gzip 0-9 are supported
 set :postgres_backup_compression_level, 6 # Will use gzip level 6 to compress the output.
 ```
 
+If you are using different clusters:
+```
+set :postgres_remote_cluster, '9.6/main'
+```
+
 ## Contributing
 
 1. Fork it ( http://github.com/spilin/capistrano3-postgres/fork )

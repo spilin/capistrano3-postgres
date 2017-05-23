@@ -8,6 +8,7 @@ namespace :load do
     set :postgres_remote_sqlc_file_path, -> { nil }
     set :postgres_local_database_config, -> { nil }
     set :postgres_remote_database_config, -> { nil }
+    set :postgres_remote_cluster, -> { nil }
   end
 end
 
@@ -23,8 +24,17 @@ namespace :postgres do
           file_name = "db_backup.#{Time.now.strftime('%Y-%m-%d_%H-%M-%S')}.sqlc"
           set :postgres_remote_sqlc_file_path, "#{shared_path}/#{fetch(:postgres_backup_dir)}/#{file_name}"
         end
-
-        execute "PGPASSWORD=#{config['password']} pg_dump #{user_option(config)} -h #{config['host']} -Fc --file=#{fetch(:postgres_remote_sqlc_file_path)} -Z #{fetch(:postgres_backup_compression_level)} #{config['database']}"
+        execute [
+          "PGPASSWORD=#{config['password']}",
+          "pg_dump #{user_option(config)}",
+          "-h #{config['host']}",
+          config['port'] ? "-p #{config['port']}" : nil,
+          "-Fc",
+          "--file=#{fetch(:postgres_remote_sqlc_file_path)}",
+          "-Z #{fetch(:postgres_backup_compression_level)}",
+          fetch(:postgres_remote_cluster) ? "--cluster #{fetch(:postgres_remote_cluster)}" : nil,
+          "#{config['database']}"
+        ].compact.join(' ')
       end
     end
 
