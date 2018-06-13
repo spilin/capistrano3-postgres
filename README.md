@@ -61,6 +61,19 @@ If you are using different clusters:
 set :postgres_remote_cluster, '9.6/main'
 ```
 
+If you don't need one or more tables dumped:
+
+```
+set :postgres_backup_exclude_table, ['personal_data', 'logs'] # Will not dump tables
+set :postgres_backup_exclude_table_data, -> { ['personal_data', 'logs'] } # Will not dump data for this tables
+```
+
+If you need only specific tables to be dumped:
+
+```
+set :postgres_backup_table, -> { ['users', 'orders'] }
+```
+
 ## Contributing
 
 1. Fork it ( http://github.com/spilin/capistrano3-postgres/fork )

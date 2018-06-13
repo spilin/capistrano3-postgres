@@ -9,6 +9,9 @@ namespace :load do
     set :postgres_local_database_config, -> { nil }
     set :postgres_remote_database_config, -> { nil }
     set :postgres_remote_cluster, -> { nil }
+    set :postgres_backup_exclude_table_data, -> { [] }
+    set :postgres_backup_exclude_table, -> { [] }
+    set :postgres_backup_table, -> { [] }
   end
 end
 
@@ -32,9 +35,12 @@ namespace :postgres do
           "-Fc",
           "--file=#{fetch(:postgres_remote_sqlc_file_path)}",
           "-Z #{fetch(:postgres_backup_compression_level)}",
+          fetch(:postgres_backup_exclude_table_data).map {|table| "--exclude-table-data=#{table}" },
+          fetch(:postgres_backup_exclude_table).map {|table| "--exclude-table=#{table}" },
+          fetch(:postgres_backup_table).map {|table| "--table=#{table}" },
           fetch(:postgres_remote_cluster) ? "--cluster #{fetch(:postgres_remote_cluster)}" : nil,
           "#{config['database']}"
-        ].compact.join(' ')
+        ].flatten.compact.join(' ')
       end
     end
 
