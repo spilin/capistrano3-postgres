@@ -12,6 +12,7 @@ namespace :load do
     set :postgres_backup_exclude_table_data, -> { [] }
     set :postgres_backup_exclude_table, -> { [] }
     set :postgres_backup_table, -> { [] }
+    set :postgres_database, -> { nil }
   end
 end
 
@@ -120,8 +121,7 @@ namespace :postgres do
   desc 'Replicate database locally'
   task :replicate do
     grab_local_database_config
-    config = fetch(:postgres_local_database_config)
-    ask(:database_name, config['database'])
+    ask(:database_name, fetch(:postgres_local_database_config)['database'])
     invoke "postgres:backup:create"
     invoke "postgres:backup:download"
     invoke "postgres:backup:import"
@@ -144,7 +144,7 @@ namespace :postgres do
         env = 'development'
         preload_env_variables(env)
         yaml_content = ERB.new(capture 'cat config/database.yml').result
-        set :postgres_local_database_config,  database_config_defaults.merge(YAML::load(yaml_content)[env])
+        set_postgres_database_config(yaml_content, env, :postgres_local_database_config)
       end
     end
   end
@@ -164,13 +164,19 @@ namespace :postgres do
 
         capture_config_cmd = "ruby -e \"#{eval_yaml_with_erb}\""
         yaml_content = test('ruby -v') ? capture(capture_config_cmd) : capture(:bundle, :exec, capture_config_cmd)
-        set :postgres_remote_database_config,  database_config_defaults.merge(YAML::load(yaml_content)[env])
+        set_postgres_database_config(yaml_content, env, :postgres_remote_database_config)
       end
     end
   end
 
   def database_config_defaults
     { 'host' => 'localhost' }
+  end
+
+  def set_postgres_database_config(yaml_content, env, key)
+    database_config = YAML::load(yaml_content)[env]
+    database_config = database_config[fetch(:postgres_database)] if fetch(:postgres_database)
+    set key, database_config_defaults.merge(database_config)
   end
 
   # Load environment variables for configurations.
