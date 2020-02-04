@@ -74,6 +74,12 @@ If you need only specific tables to be dumped:
 set :postgres_backup_table, -> { ['users', 'orders'] }
 ```
 
+If you need to support rails 6+ multiple database support, please set database_name to use:
+
+```
+set :postgres_database, 'primary'
+```
+
 ## Contributing
 
 1. Fork it ( http://github.com/spilin/capistrano3-postgres/fork )
