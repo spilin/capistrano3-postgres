@@ -46,7 +46,7 @@ namespace :postgres do
     end
 
     desc 'Download last database dump'
-    task :download do
+    task :download, [:remove_remote_file] do |_task, args|
       on roles(fetch(:postgres_role)) do |role|
         unless fetch(:postgres_remote_sqlc_file_path)
           file_name = capture("ls -v #{shared_path}/#{fetch :postgres_backup_dir}").split(/\n/).last
@@ -59,7 +59,8 @@ namespace :postgres do
         rescue SSHKit::Command::Failed => e
           warn e.inspect
         ensure
-          execute "rm #{remote_file}"
+          false_values = [nil, false, 0, '0', 'f', 'F', 'False', 'false', 'FALSE', 'Off', 'off', 'OFF', 'No', 'no', 'NO']
+          execute "rm #{remote_file}" unless false_values.include?(args[:remove_remote_file])
         end
       end
     end
@@ -123,7 +124,7 @@ namespace :postgres do
     grab_local_database_config
     ask(:database_name, fetch(:postgres_local_database_config)['database'])
     invoke "postgres:backup:create"
-    invoke "postgres:backup:download"
+    invoke "postgres:backup:download", true
     invoke "postgres:backup:import"
     invoke("postgres:backup:cleanup") if fetch(:postgres_keep_local_dumps) > 0
   end
